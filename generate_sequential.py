@@ -150,6 +150,8 @@ if __name__ == '__main__':
     print("Processing {} ".format(folder), end="", flush=True)
 
     for i, f in enumerate(scan_files):
+      print(i)
+
       # read scan and labels, get pose
       scan_filename = os.path.join(input_folder, "velodyne", f)
       scan = np.fromfile(scan_filename, dtype=np.float32)
@@ -163,35 +165,45 @@ if __name__ == '__main__':
       # convert points to homogenous coordinates (x, y, z, 1)
       points = np.ones((scan.shape))
       points[:, 0:3] = scan[:, 0:3]
-      remissions = scan[:, 3]
 
+      remissions = scan[:, 3]
+      print(points)
+      print(remissions)
+      print(scan[1, :])
+      print(points[1, :])
+      print(remissions[1])
+      input("")
       pose = poses[i]
 
-      # prepare single numpy array for all points that can be written at once.
-      num_concat_points = points.shape[0]
-      num_concat_points += sum([past["points"].shape[0] for past in history])
-      concated_points = np.zeros((num_concat_points * 4), dtype = np.float32)
-      concated_labels = np.zeros((num_concat_points), dtype = np.uint32)
+      if (len(history) == (FLAGS.sequence_length- 1)):
+          print("Here!")
 
-      start = 0
-      concated_points[4 * start:4 * (start + points.shape[0])] = scan.reshape((-1))
-      concated_labels[start:start + points.shape[0]] = labels
-      start += points.shape[0]
+          # prepare single numpy array for all points that can be written at once.
+          num_concat_points = points.shape[0]
+          num_concat_points += sum([past["points"].shape[0] for past in history])
+          concated_points = np.zeros((num_concat_points * 4), dtype = np.float32)
+          concated_labels = np.zeros((num_concat_points), dtype = np.uint32)
 
-      for past in history:
-        diff = np.matmul(inv(pose), past["pose"])
-        tpoints = np.matmul(diff, past["points"].T).T
-        tpoints[:, 3] = past["remissions"]
-        tpoints = tpoints.reshape((-1))
+          start = 0
+          concated_points[4 * start:4 * (start + points.shape[0])] = scan.reshape((-1))
+          concated_labels[start:start + points.shape[0]] = labels
+          start += points.shape[0]
 
-        concated_points[4 * start:4 * (start + past["points"].shape[0])] = tpoints
-        concated_labels[start:start + past["labels"].shape[0]] = past["labels"]
-        start += past["points"].shape[0]
+          for past in history:
+            diff = np.matmul(inv(pose), past["pose"])
+            tpoints = np.matmul(diff, past["points"].T).T
+            tpoints[:, 3] = past["remissions"]
+            tpoints = tpoints.reshape((-1))
+
+            concated_points[4 * start:4 * (start + past["points"].shape[0])] = tpoints
+            concated_labels[start:start + past["labels"].shape[0]] = past["labels"]
+            start += past["points"].shape[0]
 
 
-      # write scan and labels in one pass.
-      concated_points.tofile(os.path.join(velodyne_folder, f))
-      concated_labels.tofile(os.path.join(labels_folder, os.path.splitext(f)[0] + ".label")) 
+          # write scan and labels in one pass.
+          print("Writing to file ")
+          concated_points.tofile(os.path.join(velodyne_folder, f))
+          concated_labels.tofile(os.path.join(labels_folder, os.path.splitext(f)[0] + ".label"))
 
       # append current data to history queue.
       history.appendleft({
