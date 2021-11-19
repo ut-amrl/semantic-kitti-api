@@ -247,8 +247,6 @@ class SemLaserScan(LaserScan):
       self.sem_label = label & 0xFFFF  # semantic label in lower half
       self.inst_label = label >> 16    # instance id in upper half
       self.label = label
-      # print(self.inst_label.shape)
-      # print(np.unique(self.inst_label))
     else:
       print("Points shape: ", self.points.shape)
       print("Label shape: ", label.shape)
