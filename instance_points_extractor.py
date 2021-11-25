@@ -185,22 +185,33 @@ def getInstancesForSequence(datasetRoot, seqNumStr):
     instanceDetails = []
     for scanNum, pointsByInstance in transformed.items():
         for instNum, pointsDetails in pointsByInstance.items():
+            unnormalizedRemissions = pointsDetails.points_relative[:, 3]
             (globalPose, normalizedPoints) = getCentroidAndNormalizedPoints(pointsDetails.points_relative)
+            remissions = normalizedPoints[:, 3]
+            if (not np.array_equal(unnormalizedRemissions, remissions)):
+                print("Normalization changed the remissions")
+            if (np.amax(remissions) > 1):
+                print("Remission outside of range: " + str(np.amax(remissions)))
+            if (np.amin(remissions) < 0):
+                print("Remission below min range: " + str(np.amin(remissions)))
 
             instanceDetails.append(InstanceDetails(normalizedPoints, globalPose, seqNumStr, scanNum, pointsDetails.instance_num, pointsDetails.semantic_label))
 
-    print(instanceDetails)
-    instNumsBySemanticClass = getInstanceNumsForSemanticClass(instanceDetails)
-    print("Inst nums for semantic class")
-    for semanticClass, instNums in instNumsBySemanticClass.items():
-        print("Class: " + str(semanticClass) + ", Instances: " + str(instNums))
+    # print(instanceDetails)
+    # instNumsBySemanticClass = getInstanceNumsForSemanticClass(instanceDetails)
+    # print("Inst nums for semantic class")
+    # for semanticClass, instNums in instNumsBySemanticClass.items():
+    #     print("Class: " + str(semanticClass) + ", Instances: " + str(instNums))
     return instanceDetails
 
 
 
 def generateFileNameWithSuffix(outDir, sequence, scanNum, instNum, semClass, suffix):
     baseFileName = "sem_kitti_cluster_" + sequence + "_scan" + str(scanNum) + "_inst" + str(instNum) + "_semClass" + str(semClass) + "_" + suffix + ".npy"
-    return os.path.join(outDir, baseFileName)
+    seqOutDir = os.path.join(outDir, sequence)
+    if not os.path.exists(seqOutDir):
+        os.makedirs(seqOutDir)
+    return os.path.join(seqOutDir, baseFileName)
 
 def generateGlobalPoseFileName(outDir, sequence, scanNum, instNum, semClass):
     return generateFileNameWithSuffix(outDir, sequence, scanNum, instNum, semClass, "globPose")
