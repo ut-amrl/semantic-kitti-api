@@ -215,7 +215,7 @@ def getCenterAndYawForBoundingBoxCorners(bbCorners):
     centroidX = (opposingCorner00[0] + opposingCorner01[0]) / 2
     centroidY = (opposingCorner00[1] + opposingCorner01[1]) / 2
 
-
+    # Long edge is in the x direction
     longEdgeCorners = []
     if (np.linalg.norm(opposingCorner00 - opposingCorner10) > np.linalg.norm(opposingCorner00 - opposingCorner11)):
         longEdgeCorners = [[opposingCorner00, opposingCorner10], [opposingCorner01, opposingCorner11]]
